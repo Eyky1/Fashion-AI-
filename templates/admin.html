@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>Painel da loja — Fábia Multimarcas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+  <script defer src="{{ url_for('static', filename='js/label-reader.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</head>
+<body class="admin-page">
+  <header class="admin-header"><a class="brand" href="/"><span class="brand-marAk">F</span><span><strong>Fábia</strong><small>MULTIMARCAS</small></span></a><div><a href="/" class="text-link">Ver loja ↗</a><form action="/admin/logout" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="button button-outline" type="submit">Sair</button></form></div></header>
+  <main class="admin-main">
+    <div class="admin-title"><div><p class="eyebrow">GESTÃO DA LOJA</p><h1>Seu espaço, <em>suas escolhas.</em></h1></div><span class="admin-date" id="adminDate"></span></div>
+    <section class="sales-overview" aria-label="Resumo de vendas">
+      <div class="sales-overview-heading"><div><p class="eyebrow">VISÃO GERAL</p><h2>Vendas e pedidos</h2></div><div class="report-dates"><label>De <input id="reportStart" type="date"></label><label>Até <input id="reportEnd" type="date"></label><button class="button button-outline" id="clearReportDates" type="button">Todo o período</button></div></div>
+      <div class="sales-metrics"><article><span>Pedidos no período</span><strong id="metricOrderCount">—</strong></article><article><span>Aguardando confirmação</span><strong id="metricPendingCount">—</strong></article><article><span>Vendas confirmadas</span><strong id="metricSalesTotal">—</strong></article><article><span>Peças confirmadas</span><strong id="metricUnitsSold">—</strong></article></div>
+      <p class="report-note">Vendas confirmadas incluem pedidos confirmados ou concluídos; pedidos pendentes ainda não são vendas.</p>
+    </section>
+    <div class="admin-tabs"><button class="admin-tab active" data-tab="products">Produtos</button><button class="admin-tab" data-tab="orders">Pedidos <span id="pendingCount"></span></button><button class="admin-tab" data-tab="customers">Clientes</button></div>
+    <section id="productsPanel" class="admin-panel">
+      <div class="admin-section-heading"><div><h2>Peças da coleção</h2><p>Cadastre até 40 peças por lote. Use a referência para localizar cada peça e confira o código antes de editar.</p></div><div class="admin-heading-actions"><button class="button button-outline" id="refreshAdminButton">Atualizar</button><button class="button button-outline" id="newProductButton">Peça individual</button><button class="button button-dark" id="newBulkProductsButton">+ Adicionar 5 peças</button></div></div>
+      <section class="low-stock-panel"><div class="low-stock-heading"><div><h3>Alertas de estoque</h3><p>Veja tamanhos esgotados ou chegando ao limite definido.</p></div><label>Alertar com até <input id="lowStockThreshold" type="number" min="0" max="100" value="2"> unidades</label></div><div class="low-stock-list" id="lowStockList"></div></section>
+      <label class="product-search">Buscar por peça ou referência<input id="productSearch" type="search" placeholder="Nome, categoria ou código de referência"></label>
+      <div class="admin-product-list" id="adminProductList"><div class="empty-state">Carregando produtos…</div></div>
+    </section>
+    <section id="ordersPanel" class="admin-panel" hidden>
+      <div class="admin-section-heading"><div><h2>Pedidos recebidos</h2><p>Confirme o estoque após combinar o pedido pelo WhatsApp.</p></div><button class="button button-outline" id="exportOrdersButton" type="button" title="Arquivo de planilha compatível com Excel e Google Planilhas">Baixar planilha (.CSV)</button></div>
+      <div class="order-filters"><label>Buscar cliente, WhatsApp ou pedido<input id="orderSearch" type="search" placeholder="Nome, telefone ou nº do pedido"></label><label>Status<select id="orderStatusFilter"><option value="">Todos os status</option><option value="pending">Aguardando</option><option value="confirmed">Confirmado</option><option value="completed">Concluído</option><option value="cancelled">Cancelado</option></select></label><span id="filteredOrderCount" aria-live="polite"></span></div>
+      <div class="orders-list" id="ordersList"><div class="empty-state">Carregando pedidos…</div></div>
+    </section>
+    <section id="customersPanel" class="admin-panel" hidden>
+      <div class="admin-section-heading"><div><h2>Histórico de clientes</h2><p>Clientes são agrupados pelo WhatsApp informado no pedido.</p></div></div>
+      <label class="customer-search">Buscar cliente<input id="customerSearch" type="search" placeholder="Nome ou WhatsApp"></label>
+      <div class="customer-list" id="customersList"><div class="empty-state">Carregando clientes…</div></div>
+    </section>
+  </main>
+  <dialog class="product-form-dialog" id="productDialog"><form id="productForm" enctype="multipart/form-data"><div class="drawer-header"><div><p class="eyebrow">CATÁLOGO</p><h2 id="productFormTitle">Nova peça</h2></div><button class="icon-button" id="formClose" type="button" aria-label="Fechar">×</button></div>
+    <input type="hidden" name="productId"><label>Nome da peça<input name="name" maxlength="120" required></label><label>Referência da peça <span class="field-hint">Código interno para identificar e localizar este produto. Deve ser único.</span><input name="reference" maxlength="50" autocomplete="off" placeholder="Ex.: BL-024" required></label><label>Descrição<textarea name="description" rows="3" maxlength="2000"></textarea></label><div class="form-columns"><label>Preço (R$)<input name="price" type="number" min="0" max="999999" step="0.01" required></label><label>Categoria<select name="category" required>{% for category in categories %}<option>{{ category }}</option>{% endfor %}</select></label></div>
+    <fieldset class="stock-fieldset"><legend>Estoque por tamanho</legend><div class="stock-inputs">{% for size in sizes %}<label>{{ size }}<input type="number" name="stock-{{ size }}" min="0" max="10000" value="0" required></label>{% endfor %}</div></fieldset>
+    <label>Foto do produto <span class="field-hint">JPG, PNG ou WebP · até 5 MB</span><input name="image" type="file" accept="image/jpeg,image/png,image/webp"></label>
+    <div class="label-reader"><label>Foto da etiqueta <span class="field-hint">JPG, PNG ou WebP · até 5 MB. Lida neste navegador; não é enviada nem salva.</span><input data-label-image type="file" accept="image/jpeg,image/png,image/webp"></label><button class="button button-outline" data-read-label type="button">Ler etiqueta e preencher</button><p class="label-reader-status" data-label-status aria-live="polite"></p></div>
+    <label>Imagem recortada para montar o look <span class="field-hint">Opcional · PNG/WebP com fundo transparente · até 5 MB. Recorte somente a peça, sem modelo nem fundo.</span><input name="tryon-image" type="file" accept="image/png,image/webp"></label><div class="form-error" id="productFormError" hidden></div><button class="button button-dark" type="submit">Salvar peça <span>↗</span></button>
+  </form></dialog>
+  <dialog class="bulk-product-dialog" id="bulkProductsDialog"><form id="bulkProductsForm" enctype="multipart/form-data"><div class="drawer-header"><div><p class="eyebrow">CADASTRO EM LOTE</p><h2>Novas peças <span id="bulkProductCount"></span></h2></div><button class="icon-button" id="bulkFormClose" type="button" aria-label="Fechar">×</button></div>
+    <p class="bulk-intro">Preencha as cinco peças e envie uma vez. Você pode adicionar até 40 peças por lote. Cada foto pode ter até 5 MB. Imagens recortadas para a montagem do look são opcionais.</p>
+    <div class="bulk-product-rows" id="bulkProductRows"></div>
+    <button class="button button-outline bulk-add-row" id="addBulkRowButton" type="button">+ Adicionar outra peça</button>
+    <div class="form-error" id="bulkFormError" role="alert" hidden></div>
+    <button class="button button-dark" type="submit">Cadastrar todas as peças <span>↗</span></button>
+  </form></dialog>
+  <template id="bulkProductTemplate"><fieldset class="bulk-product-row"><legend>Peça <span data-row-number></span></legend><button class="bulk-remove-row" type="button" data-remove-row aria-label="Remover peça">Remover</button>
+    <label>Nome da peça<input data-field="name" maxlength="120" required></label>
+    <label>Referência da peça <span class="field-hint">Código interno único · ex.: BL-024</span><input data-field="reference" maxlength="50" autocomplete="off" required></label>
+    <label>Descrição<textarea data-field="description" rows="2" maxlength="2000"></textarea></label>
+    <div class="form-columns"><label>Preço (R$)<input data-field="price" type="number" min="0" max="999999" step="0.01" required></label><label>Categoria<select data-field="category" required>{% for category in categories %}<option>{{ category }}</option>{% endfor %}</select></label></div>
+    <div class="bulk-stock"><span>Estoque por tamanho</span><div class="stock-inputs">{% for size in sizes %}<label>{{ size }}<input data-size="{{ size }}" type="number" min="0" max="10000" value="0" required></label>{% endfor %}</div></div>
+    <label>Foto do produto <span class="field-hint">JPG, PNG ou WebP · até 5 MB</span><input data-image type="file" accept="image/jpeg,image/png,image/webp" required></label>
+    <div class="label-reader"><label>Foto da etiqueta <span class="field-hint">JPG, PNG ou WebP · até 5 MB. Lida neste navegador; não é enviada.</span><input data-label-image type="file" accept="image/jpeg,image/png,image/webp"></label><button class="button button-outline" data-read-label type="button">Ler etiqueta e preencher</button><p class="label-reader-status" data-label-status aria-live="polite"></p></div>
+    <label>Imagem recortada para montar o look <span class="field-hint">Opcional · PNG/WebP transparente</span><input data-tryon-image type="file" accept="image/png,image/webp"></label>
+  </fieldset></template>
+  <div class="toast" id="adminToast" role="status" aria-live="polite"></div>
+</body>
+</html>

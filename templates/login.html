@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>Acesso da loja — Fábia Multimarcas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="auth-page">
+  <a class="back-store" href="/">← Voltar para a loja</a>
+  <main class="auth-card"><a class="brand auth-brand" href="/"><span class="brand-mark">F</span><span><strong>Fábia</strong><small>MULTIMARCAS</small></span></a><p class="eyebrow">ÁREA RESTRITA</p><h1>Boas-vindas<br><em>de volta.</em></h1><p>Acesse o painel para cuidar da sua loja.</p>
+    {% if error %}<div class="form-error">{{ error }}</div>{% endif %}
+    <form method="post" action="/admin/login"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label for="password">Senha de acesso</label><input id="password" name="password" type="password" autocomplete="current-password" required><button class="button button-dark" type="submit">Entrar no painel <span>↗</span></button></form>
+  </main>
+</body>
+</html>

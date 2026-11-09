@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>Crie sua senha — Fábia Multimarcas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="auth-page">
+  <a class="back-store" href="/">← Voltar para a loja</a>
+  <main class="auth-card">
+    <a class="brand auth-brand" href="/"><span class="brand-mark">F</span><span><strong>Fábia</strong><small>MULTIMARCAS</small></span></a>
+    <p class="eyebrow">CONFIGURAÇÃO INICIAL · ACESSO LOCAL</p>
+    <h1>Crie sua<br><em>senha segura.</em></h1>
+    <p>Esta senha será usada para proteger o painel administrativo. Ela será armazenada com criptografia segura.</p>
+    {% if error %}<div class="form-error" role="alert">{{ error }}</div>{% endif %}
+    <form method="post" action="/admin/setup">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="password">Nova senha</label>
+      <input id="password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required>
+      <small class="password-hint">Use pelo menos 12 caracteres. Uma frase longa é mais fácil de lembrar.</small>
+      <label for="confirm-password">Confirme a senha</label>
+      <input id="confirm-password" name="confirm_password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required>
+      <button class="button button-dark" type="submit">Salvar senha <span>↗</span></button>
+    </form>
+  </main>
+</body>
+</html>
